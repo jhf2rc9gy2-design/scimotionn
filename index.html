@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SciMotion: Master Edition</title>
+    <style>
+        /* --- ESTÉTICA CYBERPUNK --- */
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-green: #00ff41;
+            --neon-red: #ff3131;
+            --neon-yellow: #ffee00;
+            --bg-dark: #050510;
+            --panel-bg: rgba(16, 16, 32, 0.98);
+        }
+
+        body {
+            margin: 0; padding: 10px;
+            font-family: 'Segoe UI', monospace;
+            background-color: var(--bg-dark);
+            background-image: linear-gradient(0deg, #050510 0%, #1a1a3a 100%);
+            color: white;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh;
+        }
+
+        #app-container {
+            width: 100%; max-width: 900px;
+            background: var(--panel-bg);
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        /* Pantallas */
+        .screen { display: none; animation: fadeIn 0.4s ease; }
+        .active { display: block; }
+
+        h1, h2 { text-align: center; text-shadow: 0 0 10px var(--neon-pink); margin: 10px 0; }
+        h1 { font-size: clamp(2rem, 5vw, 3rem); letter-spacing: 3px; }
+
+        /* Botones */
+        button {
+            font-family: inherit; cursor: pointer; border-radius: 5px;
+            transition: 0.2s; text-transform: uppercase; font-weight: bold;
+        }
+        
+        .menu-btn {
+            width: 100%; padding: 15px; margin-bottom: 10px;
+            background: rgba(0,0,0,0.5); border: 1px solid #555; color: #aaa;
+        }
+        .menu-btn:hover { border-color: white; color: white; background: rgba(255,255,255,0.1); }
+
+        .diff-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .diff-btn { padding: 20px; border: 2px solid #555; background: rgba(0,0,0,0.5); color: #888; }
+        .diff-btn:hover { transform: translateY(-3px); }
+        .diff-btn.easy:hover { border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 15px var(--neon-green); }
+        .diff-btn.medium:hover { border-color: var(--neon-yellow); color: var(--neon-yellow); box-shadow: 0 0 15px var(--neon-yellow); }
+        .diff-btn.hard:hover { border-color: var(--neon-red); color: var(--neon-red); box-shadow: 0 0 15px var(--neon-red); }
+
+        /* HUD & Juego */
+        .hud { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        .timer-bar { height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+        .timer-fill { height: 100%; width: 100%; background: var(--neon-blue); }
+
+        .question-box { font-size: 1.3rem; margin-bottom: 15px; min-height: 50px; font-weight: bold; }
+        .hint-box { background: rgba(255, 255, 0, 0.1); border-left: 3px solid var(--neon-yellow); padding: 10px; color: #ddd; margin-bottom: 20px; display: none; }
+        
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .opt-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--neon-blue); color: white; padding: 15px; }
+        .opt-btn:hover { background: var(--neon-blue); color: black; }
+        .opt-btn.correct { background: var(--neon-green) !important; color: black !important; }
+        .opt-btn.wrong { background: var(--neon-red) !important; border-color: red; }
+
+        /* Formulario Creador */
+        .input-group { margin-bottom: 10px; text-align: left; }
+        label { display: block; color: var(--neon-blue); margin-bottom: 5px; font-size: 0.8rem; }
+        input, select, textarea { width: 100%; padding: 10px; background: #111; border: 1px solid #444; color: white; box-sizing: border-box; }
+        .action-btn { width: 100%; padding: 15px; background: var(--neon-green); color: black; border: none; font-weight: bold; margin-top: 10px; }
+        .back-btn { background: #333; color: white; border: none; padding: 8px 15px; margin-bottom: 15px; display: inline-block; }
+
+        /* Tabla de Base de Datos */
+        .db-container { max-height: 400px; overflow-y: auto; border: 1px solid #333; border-radius: 5px; }
+        .db-item { 
+            padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; 
+            font-size: 0.9rem; background: rgba(0,0,0,0.2);
+        }
+        .db-item:nth-child(even) { background: rgba(255,255,255,0.03); }
+        .tag { padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; margin-right: 5px; text-transform: uppercase; font-weight: bold; }
+        .tag.easy { background: var(--neon-green); color: black; }
+        .tag.medium { background: var(--neon-yellow); color: black; }
+        .tag.hard { background: var(--neon-red); color: white; }
+        .tag.all { background: var(--neon-blue); color: black; }
+        
+        .del-btn { background: var(--neon-red); color: white; border: none; padding: 5px 10px; font-size: 0.8rem; margin-left: 10px; }
+        .del-btn:hover { background: red; }
+
+        @media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } .diff-grid { grid-template-columns: 1fr; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    
+    <div id="menu-screen" class="screen active">
+        <h1>SciMotion</h1>
+        <p style="text-align: center; color: var(--neon-blue);">SISTEMA DE ENTRENAMIENTO FÍSICO</p>
+        
+        <div class="diff-grid">
+            <button class="diff-btn easy" onclick="game.start('easy')">
+                <div style="font-size: 1.5rem">🟢</div>FÁCIL<br><small>12s + Pistas</small>
+            </button>
+            <button class="diff-btn medium" onclick="game.start('medium')">
+                <div style="font-size: 1.5rem">🟡</div>MEDIO<br><small>8s + Pistas</small>
+            </button>
+            <button class="diff-btn hard" onclick="game.start('hard')">
+                <div style="font-size: 1.5rem">🔴</div>DIFÍCIL<br><small>4s + Hardcore</small>
+            </button>
+        </div>
+
+        <button class="menu-btn" onclick="ui.showCreator()">🛠 CREAR PREGUNTA NUEVA</button>
+        <button class="menu-btn" onclick="ui.showDB()">📂 VER TODA LA BASE DE DATOS</button>
+        <p id="total-questions" style="text-align: center; font-size: 0.8rem; color: #666;"></p>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="hud">
+            <span>PTS: <b id="score">0</b></span>
+            <span id="mode-display" style="color:var(--neon-blue)">MODO</span>
+            <span id="lives" style="color:var(--neon-red)">❤❤❤</span>
+        </div>
+        
+        <div class="timer-bar"><div id="timer" class="timer-fill"></div></div>
+        <div id="category-tag" style="font-size: 0.8rem; color: #888; margin-bottom: 5px;"></div>
+        <div id="question" class="question-box">...</div>
+        <div id="hint-area" class="hint-box">💡 <b>PISTA:</b> <span id="hint-text">...</span></div>
+        <div id="options" class="options-grid"></div>
+    </div>
+
+    <div id="creator-screen" class="screen">
+        <button class="back-btn" onclick="ui.showMenu()">❮ Menú</button>
+        <h2 style="color: var(--neon-green);">AÑADIR PREGUNTA</h2>
+        
+        <div class="input-group">
+            <label>NIVEL DE DIFICULTAD RECOMENDADO:</label>
+            <select id="new-diff">
+                <option value="all">🌐 UNIVERSAL (Aparece en todos los modos)</option>
+                <option value="easy">🟢 FÁCIL (Solo para principiantes)</option>
+                <option value="medium">🟡 MEDIO (Nivel estándar)</option>
+                <option value="hard">🔴 DIFÍCIL (Solo para expertos)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>ENUNCIADO:</label>
+            <textarea id="new-q" rows="2" placeholder="Escribe la pregunta aquí..."></textarea>
+        </div>
+
+        <div class="options-grid" style="margin-bottom: 10px;">
+            <div><label>Opción A:</label><input type="text" id="opt-0"></div>
+            <div><label>Opción B:</label><input type="text" id="opt-1"></div>
+            <div><label>Opción C:</label><input type="text" id="opt-2"></div>
+            <div><label>Opción D:</label><input type="text" id="opt-3"></div>
+        </div>
+
+        <div class="input-group">
+            <label>RESPUESTA CORRECTA:</label>
+            <select id="correct-idx">
+                <option value="0">Opción A</option>
+                <option value="1">Opción B</option>
+                <option value="2">Opción C</option>
+                <option value="3">Opción D</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>PISTA (Opcional):</label>
+            <input type="text" id="new-hint" placeholder="Ayuda para el usuario...">
+        </div>
+
+        <button class="action-btn" onclick="creator.save()">GUARDAR PREGUNTA</button>
+    </div>
+
+    <div id="db-screen" class="screen">
+        <button class="back-btn" onclick="ui.showMenu()">❮ Menú</button>
+        <h2 style="color: var(--neon-blue);">BANCO DE PREGUNTAS</h2>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Aquí puedes ver todas las preguntas activas. Solo puedes borrar las que tú has creado.</p>
+        
+        <div id="db-list" class="db-container">
+            </div>
+    </div>
+
+    <div id="end-screen" class="screen" style="text-align: center;">
+        <h1 id="end-title">FIN</h1>
+        <h2 id="final-score" style="color: var(--neon-blue); font-size: 3rem;">0</h2>
+        <button class="action-btn" onclick="ui.showMenu()">VOLVER AL MENÚ</button>
+    </div>
+
+</div>
+
+<script>
+  /* ================= 1. DATOS MASIVOS (30+ PREGUNTAS) ================= */
+    const defaultQuestions = [
+        // --- NIVEL FÁCIL (Conceptos básicos y unidades) ---
+        { q: "¿Cuál es la unidad internacional del Tiempo?", o: ["Hora", "Minuto", "Segundo", "Milisegundo"], a: 2, h: "Se abrevia con una 's'.", d: "easy" },
+        { q: "¿Qué carga eléctrica tiene un electrón?", o: ["Positiva", "Negativa", "Neutra", "Variable"], a: 1, h: "Es lo opuesto al protón.", d: "easy" },
+        { q: "Los polos opuestos de dos imanes se...", o: ["Repelen", "Atraen", "Ignoran", "Fusionan"], a: 1, h: "Norte busca a Sur.", d: "easy" },
+        { q: "¿Qué instrumento mide la temperatura?", o: ["Barómetro", "Termómetro", "Velocímetro", "Dinamómetro"], a: 1, h: "Termo = Calor.", d: "easy" },
+        { q: "La fricción entre dos objetos produce...", o: ["Hielo", "Calor", "Luz", "Gravedad"], a: 1, h: "Frótate las manos rápido.", d: "easy" },
+        { q: "¿Qué estado de la materia es el hielo?", o: ["Sólido", "Líquido", "Gaseoso", "Plasma"], a: 0, h: "Es duro y frío.", d: "easy" },
+        { q: "El velocímetro de un auto mide la...", o: ["Aceleración", "Distancia", "Rapidez instantánea", "Fuerza"], a: 2, h: "Qué tan rápido vas AHORA.", d: "easy" },
+        { q: "¿Cuál es el símbolo de la Velocidad?", o: ["t", "d", "m", "v"], a: 3, h: "Es la inicial de la palabra.", d: "easy" },
+        { q: "Todo lo que ocupa lugar en el espacio es...", o: ["Energía", "Materia", "Tiempo", "Vacío"], a: 1, h: "Tú estás hecho de esto.", d: "easy" },
+        { q: "La fuerza que nos mantiene pegados al suelo es...", o: ["Magnetismo", "Fricción", "Gravedad", "Tensión"], a: 2, h: "La descubrió Newton con una manzana.", d: "easy" },
+
+        // --- NIVEL MEDIO (Lógica simple y fórmulas conocidas) ---
+        { q: "La energía no se crea ni se destruye, solo se...", o: ["Pierde", "Transforma", "Gana", "Oculta"], a: 1, h: "Ley de Conservación.", d: "medium" },
+        { q: "Si la velocidad es constante, la aceleración es...", o: ["Cero", "Máxima", "Infinita", "Negativa"], a: 0, h: "No hay cambio de velocidad.", d: "medium" },
+        { q: "¿Cuál es la fórmula de la Densidad?", o: ["Masa * Volumen", "Masa / Volumen", "Volumen / Masa", "Peso * Gravedad"], a: 1, h: "Qué tan apretada está la materia.", d: "medium" },
+        { q: "Un material que NO deja pasar electricidad es un...", o: ["Conductor", "Semiconductor", "Aislante", "Metal"], a: 2, h: "Como la goma o el plástico.", d: "medium" },
+        { q: "La presión atmosférica disminuye si...", o: ["Bajas al mar", "Subes una montaña", "Corres rápido", "Hace frío"], a: 1, h: "Hay menos aire arriba de ti.", d: "medium" },
+        { q: "¿En qué unidad se mide la Potencia?", o: ["Joule", "Watt", "Newton", "Pascal"], a: 1, h: "Como en los focos/bombillas.", d: "medium" },
+        { q: "La luz blanca está compuesta por...", o: ["Solo blanco", "Rojo y Azul", "Todos los colores", "Oscuridad"], a: 2, h: "Piensa en un arcoíris.", d: "medium" },
+        { q: "La Primera Ley de Newton es la Ley de...", o: ["Inercia", "Fuerza", "Acción-Reacción", "Gravedad"], a: 0, h: "Resistencia al cambio de movimiento.", d: "medium" },
+        { q: "El sonido viaja más rápido en...", o: ["Aire", "Agua", "Acero (Sólido)", "Vacío"], a: 2, h: "Donde las moléculas están más juntas.", d: "medium" },
+        { q: "Tipo de energía almacenada por altura", o: ["Cinética", "Potencial", "Elástica", "Química"], a: 1, h: "Potencial Gravitatoria.", d: "medium" },
+
+        // --- NIVEL DIFÍCIL (Datos específicos y conceptos avanzados) ---
+        { q: "¿Qué principio explica por qué vuelan los aviones?", o: ["Arquímedes", "Bernoulli", "Pascal", "Ohm"], a: 1, h: "Relación velocidad-presión en fluidos.", d: "hard" },
+        { q: "Valor del Cero Absoluto en Kelvin", o: ["0 K", "-273 K", "100 K", "273 K"], a: 0, h: "Es el límite frío del universo.", d: "hard" },
+        { q: "Partícula responsable de la luz (sin masa)", o: ["Electrón", "Protón", "Fotón", "Neutrón"], a: 2, h: "Es un 'paquete' de luz.", d: "hard" },
+        { q: "La entropía es una medida del...", o: ["Calor", "Trabajo", "Desorden", "Tiempo"], a: 2, h: "2da Ley de la Termodinámica.", d: "hard" },
+        { q: "¿Qué ley se usa para resortes y elásticos?", o: ["Ley de Snell", "Ley de Hooke", "Ley de Ohm", "Ley de Boyle"], a: 1, h: "F = -k * x", d: "hard" },
+        { q: "Unidad de medida de la Capacitancia eléctrica", o: ["Henry", "Faradio", "Tesla", "Weber"], a: 1, h: "En honor a Michael Faraday.", d: "hard" },
+        { q: "¿Cuál es la velocidad de la luz (aprox)?", o: ["300,000 km/s", "340 m/s", "9.8 m/s", "1000 km/h"], a: 0, h: "Es lo más rápido del universo.", d: "hard" },
+        { q: "La fisión nuclear consiste en...", o: ["Unir núcleos", "Dividir un núcleo", "Quemar átomos", "Enfriar neutrones"], a: 1, h: "Lo que hacen las centrales nucleares.", d: "hard" },
+        { q: "Ley que relaciona Voltaje, Corriente y Resistencia", o: ["Ley de Watt", "Ley de Ohm", "Ley de Ampere", "Ley de Coulomb"], a: 1, h: "V = I * R", d: "hard" },
+        { q: "Un proceso sin transferencia de calor es...", o: ["Isotérmico", "Isobárico", "Adiabático", "Isocórico"], a: 2, h: "El calor (Q) es igual a cero.", d: "hard" }
+    ];
+
+    /* ================= 2. GESTOR DE DATOS ================= */
+    const dataManager = {
+        getAll: function() {
+            const custom = JSON.parse(localStorage.getItem('scimotion_v4_custom')) || [];
+            // Marcamos las custom con isCustom: true para poder borrarlas
+            const customMarked = custom.map(q => ({...q, isCustom: true}));
+            return [...defaultQuestions, ...customMarked];
+        },
+        save: function(newQ) {
+            const custom = JSON.parse(localStorage.getItem('scimotion_v4_custom')) || [];
+            custom.push(newQ);
+            localStorage.setItem('scimotion_v4_custom', JSON.stringify(custom));
+        },
+        delete: function(indexInCustom) {
+            const custom = JSON.parse(localStorage.getItem('scimotion_v4_custom')) || [];
+            custom.splice(indexInCustom, 1); // Borrar
+            localStorage.setItem('scimotion_v4_custom', JSON.stringify(custom));
+            ui.renderDB(); // Refrescar lista
+            ui.updateCount();
+        }
+    };
+
+    /* ================= 3. LÓGICA JUEGO ================= */
+    const game = {
+        config: {
+            easy: { time: 12, hint: true, label: "FÁCIL" },
+            medium: { time: 8, hint: true, label: "MEDIO" },
+            hard: { time: 6, hint: false, label: "DIFÍCIL" }
+        },
+        mode: null,
+        modeKey: '',
+        questions: [],
+        index: 0,
+        score: 0,
+        lives: 3,
+        timerVal: 0,
+        timerInt: null,
+        paused: false,
+
+        start: function(diffKey) {
+            this.modeKey = diffKey;
+            this.mode = this.config[diffKey];
+            
+            // FILTRADO INTELIGENTE:
+            // Carga preguntas que sean 'all' O que coincidan con la dificultad elegida
+            const allQ = dataManager.getAll();
+            let filtered = allQ.filter(q => q.d === 'all' || q.d === diffKey);
+
+            if(filtered.length === 0) {
+                alert("No hay preguntas para esta dificultad. Añade algunas en el Creador.");
+                return;
+            }
+
+            // Mezclar y cortar
+            this.questions = filtered.sort(() => Math.random() - 0.5).slice(0, 10);
+            
+            this.index = 0; this.score = 0; this.lives = 3;
+            ui.showScreen('game-screen');
+            document.getElementById('mode-display').innerText = this.mode.label;
+            this.loadQ();
+        },
+
+        loadQ: function() {
+            if(this.index >= this.questions.length) return this.end(true);
+            
+            const q = this.questions[this.index];
+            document.getElementById('question').innerText = q.q;
+            document.getElementById('category-tag').innerText = "DIFICULTAD: " + (q.d === 'all' ? 'UNIVERSAL' : q.d.toUpperCase());
+            document.getElementById('score').innerText = this.score;
+
+            const optsDiv = document.getElementById('options');
+            optsDiv.innerHTML = "";
+            q.o.forEach((txt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'opt-btn';
+                btn.innerText = txt;
+                btn.onclick = () => this.check(i, btn);
+                optsDiv.appendChild(btn);
+            });
+
+            // Pista
+            const hintArea = document.getElementById('hint-area');
+            if(this.mode.hint && q.h) {
+                hintArea.style.display = "block";
+                document.getElementById('hint-text').innerText = q.h;
+            } else {
+                hintArea.style.display = "none";
+            }
+
+            this.startTimer();
+        },
+
+        startTimer: function() {
+            clearInterval(this.timerInt);
+            this.timerVal = this.mode.time;
+            this.paused = false;
+            
+            this.timerInt = setInterval(() => {
+                if(this.paused) return;
+                this.timerVal -= 0.1;
+                document.getElementById('timer').style.width = ((this.timerVal / this.mode.time) * 100) + "%";
+                if(this.timerVal <= 0) this.fail();
+            }, 100);
+        },
+
+        check: function(idx, btn) {
+            if(this.paused) return;
+            this.paused = true;
+            clearInterval(this.timerInt);
+            
+            const correct = this.questions[this.index].a;
+            if(idx === correct) {
+                btn.classList.add('correct');
+                this.score += 100 + Math.floor(this.timerVal * 10);
+                setTimeout(() => this.next(), 1000);
+            } else {
+                btn.classList.add('wrong');
+                document.getElementById('options').children[correct].classList.add('correct');
+                this.lives--;
+                ui.updateLives();
+                if(this.lives <= 0) setTimeout(() => this.end(false), 1500);
+                else setTimeout(() => this.next(), 1500);
+            }
+        },
+
+        fail: function() {
+            this.paused = true; clearInterval(this.timerInt);
+            this.lives--; ui.updateLives();
+            const correct = this.questions[this.index].a;
+            document.getElementById('options').children[correct].classList.add('correct');
+            if(this.lives <= 0) setTimeout(() => this.end(false), 1500);
+            else setTimeout(() => this.next(), 1500);
+        },
+
+        next: function() { this.index++; this.loadQ(); },
+        
+        end: function(win) {
+            ui.showScreen('end-screen');
+            document.getElementById('end-title').innerText = win ? "¡COMPLETADO!" : "GAME OVER";
+            document.getElementById('end-title').style.color = win ? "var(--neon-green)" : "var(--neon-red)";
+            document.getElementById('final-score').innerText = this.score;
+        }
+    };
+
+    /* ================= 4. UI ================= */
+    const ui = {
+        showScreen: function(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'menu-screen') this.updateCount();
+        },
+        showCreator: function() { this.showScreen('creator-screen'); },
+        showMenu: function() { this.showScreen('menu-screen'); },
+        
+        showDB: function() {
+            this.showScreen('db-screen');
+            this.renderDB();
+        },
+
+        renderDB: function() {
+            const list = document.getElementById('db-list');
+            list.innerHTML = "";
+            const all = dataManager.getAll();
+            
+            // Contador para saber el índice real en el array 'custom' para borrar
+            let customIndex = 0;
+
+            all.forEach((q, i) => {
+                const item = document.createElement('div');
+                item.className = 'db-item';
+                
+                // Color de etiqueta
+                let tagClass = q.d; // 'easy', 'medium', 'hard', 'all'
+                let tagText = q.d === 'all' ? 'UNIV' : q.d.toUpperCase();
+
+                let html = `<div>
+                    <span class="tag ${tagClass}">${tagText}</span> 
+                    <b>${q.q}</b>
+                    <br><small style="color:#aaa">R: ${q.o[q.a]}</small>
+                </div>`;
+
+                if(q.isCustom) {
+                    // Botón borrar solo para custom
+                    // Usamos una closure para capturar el índice actual
+                    let currentIdx = customIndex; 
+                    const btnDel = `<button class="del-btn" onclick="dataManager.delete(${currentIdx})">🗑</button>`;
+                    html += btnDel;
+                    customIndex++;
+                } else {
+                    html += `<span style="font-size:1.2rem;">🔒</span>`; // Candado para default
+                }
+
+                item.innerHTML = html;
+                list.appendChild(item);
+            });
+        },
+
+        updateLives: function() {
+            let h = ""; for(let i=0; i<3; i++) h += i < game.lives ? "❤" : "💀";
+            document.getElementById('lives').innerText = h;
+        },
+        updateCount: function() {
+            document.getElementById('total-questions').innerText = `Total preguntas: ${dataManager.getAll().length}`;
+        }
+    };
+
+    const creator = {
+        save: function() {
+            const diff = document.getElementById('new-diff').value;
+            const q = document.getElementById('new-q').value;
+            const o = [
+                document.getElementById('opt-0').value,
+                document.getElementById('opt-1').value,
+                document.getElementById('opt-2').value,
+                document.getElementById('opt-3').value
+            ];
+            const a = parseInt(document.getElementById('correct-idx').value);
+            const h = document.getElementById('new-hint').value;
+
+            if(!q || o.some(x => !x)) { alert("Llena todos los campos."); return; }
+
+            dataManager.save({ q: q, o: o, a: a, h: h, d: diff });
+            
+            alert("Pregunta guardada.");
+            // Reset form
+            document.getElementById('new-q').value = "";
+            document.getElementById('new-hint').value = "";
+            o.forEach((_, i) => document.getElementById('opt-'+i).value = "");
+        }
+    };
+
+    ui.updateCount();
+</script>
+</body>
+</html>
