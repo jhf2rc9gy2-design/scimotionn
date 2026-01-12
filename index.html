@@ -126,7 +126,7 @@
         </div>
 
         <button class="menu-btn" onclick="ui.showCreator()">🛠 CREAR PREGUNTA NUEVA</button>
-        <button class="menu-btn" onclick="ui.showDB()">📂 VER TODA LA BASE DE DATOS</button>
+        <button class="menu-btn" onclick="ui.showDB()">📂 VER TODA LA BASE DE DATOS 🔒</button>
         <p id="total-questions" style="text-align: center; font-size: 0.8rem; color: #666;"></p>
     </div>
 
@@ -191,7 +191,7 @@
     <div id="db-screen" class="screen">
         <button class="back-btn" onclick="ui.showMenu()">❮ Menú</button>
         <h2 style="color: var(--neon-blue);">BANCO DE PREGUNTAS</h2>
-        <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">Aquí puedes ver todas las preguntas activas. Solo puedes borrar las que tú has creado.</p>
+        <p style="font-size:0.8rem; color:#aaa; margin-bottom:10px;">ZONA PROTEGIDA. Solo puedes borrar tus preguntas.</p>
         
         <div id="db-list" class="db-container">
             </div>
@@ -206,9 +206,9 @@
 </div>
 
 <script>
-  /* ================= 1. DATOS MASIVOS (30+ PREGUNTAS) ================= */
+    /* ================= 1. DATOS (36 PREGUNTAS) ================= */
     const defaultQuestions = [
-        // --- NIVEL FÁCIL (Conceptos básicos y unidades) ---
+        // FÁCIL
         { q: "¿Cuál es la unidad internacional del Tiempo?", o: ["Hora", "Minuto", "Segundo", "Milisegundo"], a: 2, h: "Se abrevia con una 's'.", d: "easy" },
         { q: "¿Qué carga eléctrica tiene un electrón?", o: ["Positiva", "Negativa", "Neutra", "Variable"], a: 1, h: "Es lo opuesto al protón.", d: "easy" },
         { q: "Los polos opuestos de dos imanes se...", o: ["Repelen", "Atraen", "Ignoran", "Fusionan"], a: 1, h: "Norte busca a Sur.", d: "easy" },
@@ -219,8 +219,7 @@
         { q: "¿Cuál es el símbolo de la Velocidad?", o: ["t", "d", "m", "v"], a: 3, h: "Es la inicial de la palabra.", d: "easy" },
         { q: "Todo lo que ocupa lugar en el espacio es...", o: ["Energía", "Materia", "Tiempo", "Vacío"], a: 1, h: "Tú estás hecho de esto.", d: "easy" },
         { q: "La fuerza que nos mantiene pegados al suelo es...", o: ["Magnetismo", "Fricción", "Gravedad", "Tensión"], a: 2, h: "La descubrió Newton con una manzana.", d: "easy" },
-
-        // --- NIVEL MEDIO (Lógica simple y fórmulas conocidas) ---
+        // MEDIO
         { q: "La energía no se crea ni se destruye, solo se...", o: ["Pierde", "Transforma", "Gana", "Oculta"], a: 1, h: "Ley de Conservación.", d: "medium" },
         { q: "Si la velocidad es constante, la aceleración es...", o: ["Cero", "Máxima", "Infinita", "Negativa"], a: 0, h: "No hay cambio de velocidad.", d: "medium" },
         { q: "¿Cuál es la fórmula de la Densidad?", o: ["Masa * Volumen", "Masa / Volumen", "Volumen / Masa", "Peso * Gravedad"], a: 1, h: "Qué tan apretada está la materia.", d: "medium" },
@@ -231,8 +230,7 @@
         { q: "La Primera Ley de Newton es la Ley de...", o: ["Inercia", "Fuerza", "Acción-Reacción", "Gravedad"], a: 0, h: "Resistencia al cambio de movimiento.", d: "medium" },
         { q: "El sonido viaja más rápido en...", o: ["Aire", "Agua", "Acero (Sólido)", "Vacío"], a: 2, h: "Donde las moléculas están más juntas.", d: "medium" },
         { q: "Tipo de energía almacenada por altura", o: ["Cinética", "Potencial", "Elástica", "Química"], a: 1, h: "Potencial Gravitatoria.", d: "medium" },
-
-        // --- NIVEL DIFÍCIL (Datos específicos y conceptos avanzados) ---
+        // DIFÍCIL
         { q: "¿Qué principio explica por qué vuelan los aviones?", o: ["Arquímedes", "Bernoulli", "Pascal", "Ohm"], a: 1, h: "Relación velocidad-presión en fluidos.", d: "hard" },
         { q: "Valor del Cero Absoluto en Kelvin", o: ["0 K", "-273 K", "100 K", "273 K"], a: 0, h: "Es el límite frío del universo.", d: "hard" },
         { q: "Partícula responsable de la luz (sin masa)", o: ["Electrón", "Protón", "Fotón", "Neutrón"], a: 2, h: "Es un 'paquete' de luz.", d: "hard" },
@@ -249,7 +247,6 @@
     const dataManager = {
         getAll: function() {
             const custom = JSON.parse(localStorage.getItem('scimotion_v4_custom')) || [];
-            // Marcamos las custom con isCustom: true para poder borrarlas
             const customMarked = custom.map(q => ({...q, isCustom: true}));
             return [...defaultQuestions, ...customMarked];
         },
@@ -260,22 +257,21 @@
         },
         delete: function(indexInCustom) {
             const custom = JSON.parse(localStorage.getItem('scimotion_v4_custom')) || [];
-            custom.splice(indexInCustom, 1); // Borrar
+            custom.splice(indexInCustom, 1);
             localStorage.setItem('scimotion_v4_custom', JSON.stringify(custom));
-            ui.renderDB(); // Refrescar lista
+            ui.renderDB();
             ui.updateCount();
         }
     };
 
-    /* ================= 3. LÓGICA JUEGO ================= */
+    /* ================= 3. LÓGICA JUEGO (LIMITADO A 8) ================= */
     const game = {
         config: {
             easy: { time: 12, hint: true, label: "FÁCIL" },
             medium: { time: 8, hint: true, label: "MEDIO" },
-            hard: { time: 6, hint: false, label: "DIFÍCIL" }
+            hard: { time: 4, hint: false, label: "DIFÍCIL" }
         },
         mode: null,
-        modeKey: '',
         questions: [],
         index: 0,
         score: 0,
@@ -283,23 +279,19 @@
         timerVal: 0,
         timerInt: null,
         paused: false,
+        maxPerSession: 8, // <--- LÍMITE DE PREGUNTAS POR SESIÓN
 
         start: function(diffKey) {
-            this.modeKey = diffKey;
             this.mode = this.config[diffKey];
-            
-            // FILTRADO INTELIGENTE:
-            // Carga preguntas que sean 'all' O que coincidan con la dificultad elegida
             const allQ = dataManager.getAll();
             let filtered = allQ.filter(q => q.d === 'all' || q.d === diffKey);
 
-            if(filtered.length === 0) {
-                alert("No hay preguntas para esta dificultad. Añade algunas en el Creador.");
-                return;
+            if(filtered.length < this.maxPerSession) {
+                console.warn("Pocas preguntas en esta categoría.");
             }
 
-            // Mezclar y cortar
-            this.questions = filtered.sort(() => Math.random() - 0.5).slice(0, 10);
+            // Seleccionar 8 al azar
+            this.questions = filtered.sort(() => Math.random() - 0.5).slice(0, this.maxPerSession);
             
             this.index = 0; this.score = 0; this.lives = 3;
             ui.showScreen('game-screen');
@@ -312,7 +304,7 @@
             
             const q = this.questions[this.index];
             document.getElementById('question').innerText = q.q;
-            document.getElementById('category-tag').innerText = "DIFICULTAD: " + (q.d === 'all' ? 'UNIVERSAL' : q.d.toUpperCase());
+            document.getElementById('category-tag').innerText = `PREGUNTA ${this.index + 1} DE ${this.questions.length}`;
             document.getElementById('score').innerText = this.score;
 
             const optsDiv = document.getElementById('options');
@@ -325,7 +317,6 @@
                 optsDiv.appendChild(btn);
             });
 
-            // Pista
             const hintArea = document.getElementById('hint-area');
             if(this.mode.hint && q.h) {
                 hintArea.style.display = "block";
@@ -341,7 +332,6 @@
             clearInterval(this.timerInt);
             this.timerVal = this.mode.time;
             this.paused = false;
-            
             this.timerInt = setInterval(() => {
                 if(this.paused) return;
                 this.timerVal -= 0.1;
@@ -354,7 +344,6 @@
             if(this.paused) return;
             this.paused = true;
             clearInterval(this.timerInt);
-            
             const correct = this.questions[this.index].a;
             if(idx === correct) {
                 btn.classList.add('correct');
@@ -374,7 +363,9 @@
             this.paused = true; clearInterval(this.timerInt);
             this.lives--; ui.updateLives();
             const correct = this.questions[this.index].a;
-            document.getElementById('options').children[correct].classList.add('correct');
+            if(document.getElementById('options').children[correct]) {
+                document.getElementById('options').children[correct].classList.add('correct');
+            }
             if(this.lives <= 0) setTimeout(() => this.end(false), 1500);
             else setTimeout(() => this.next(), 1500);
         },
@@ -382,10 +373,11 @@
         next: function() { this.index++; this.loadQ(); },
         
         end: function(win) {
+            clearInterval(this.timerInt);
             ui.showScreen('end-screen');
-            document.getElementById('end-title').innerText = win ? "¡COMPLETADO!" : "GAME OVER";
+            document.getElementById('end-title').innerText = win ? "¡MISIÓN CUMPLIDA!" : "SISTEMA CAÍDO";
             document.getElementById('end-title').style.color = win ? "var(--neon-green)" : "var(--neon-red)";
-            document.getElementById('final-score').innerText = this.score;
+            document.getElementById('final-score').innerText = this.score + " PTS";
         }
     };
 
@@ -400,43 +392,44 @@
         showMenu: function() { this.showScreen('menu-screen'); },
         
         showDB: function() {
-            this.showScreen('db-screen');
-            this.renderDB();
+            const secret = "1234"; // <--- PIN DE SEGURIDAD (CAMBIALO AQUÍ)
+            const input = prompt("🔐 ZONA RESTRINGIDA\nIngrese el PIN de profesor:");
+            
+            if(input === secret) {
+                this.showScreen('db-screen'); 
+                this.renderDB();
+            } else {
+                alert("⛔ ACCESO DENEGADO: PIN incorrecto.");
+            }
         },
 
         renderDB: function() {
             const list = document.getElementById('db-list');
             list.innerHTML = "";
             const all = dataManager.getAll();
-            
-            // Contador para saber el índice real en el array 'custom' para borrar
             let customIndex = 0;
-
             all.forEach((q, i) => {
                 const item = document.createElement('div');
                 item.className = 'db-item';
-                
-                // Color de etiqueta
-                let tagClass = q.d; // 'easy', 'medium', 'hard', 'all'
+                let tagClass = q.d;
                 let tagText = q.d === 'all' ? 'UNIV' : q.d.toUpperCase();
+                
+                // Obtenemos el texto de la respuesta correcta
+                const answerText = q.o[q.a];
 
+                // Renderizamos Pregunta y Respuesta
                 let html = `<div>
-                    <span class="tag ${tagClass}">${tagText}</span> 
+                    <span class="tag ${tagClass}">${tagText}</span>
                     <b>${q.q}</b>
-                    <br><small style="color:#aaa">R: ${q.o[q.a]}</small>
+                    <br>
+                    <small style="color: var(--neon-green); margin-left: 5px;">✅ R: ${answerText}</small>
                 </div>`;
-
+                
                 if(q.isCustom) {
-                    // Botón borrar solo para custom
-                    // Usamos una closure para capturar el índice actual
                     let currentIdx = customIndex; 
-                    const btnDel = `<button class="del-btn" onclick="dataManager.delete(${currentIdx})">🗑</button>`;
-                    html += btnDel;
+                    html += `<button class="del-btn" onclick="dataManager.delete(${currentIdx})">🗑</button>`;
                     customIndex++;
-                } else {
-                    html += `<span style="font-size:1.2rem;">🔒</span>`; // Candado para default
-                }
-
+                } else { html += `<span>🔒</span>`; }
                 item.innerHTML = html;
                 list.appendChild(item);
             });
@@ -447,7 +440,7 @@
             document.getElementById('lives').innerText = h;
         },
         updateCount: function() {
-            document.getElementById('total-questions').innerText = `Total preguntas: ${dataManager.getAll().length}`;
+            document.getElementById('total-questions').innerText = `Total preguntas en BD: ${dataManager.getAll().length}`;
         }
     };
 
@@ -463,13 +456,9 @@
             ];
             const a = parseInt(document.getElementById('correct-idx').value);
             const h = document.getElementById('new-hint').value;
-
             if(!q || o.some(x => !x)) { alert("Llena todos los campos."); return; }
-
             dataManager.save({ q: q, o: o, a: a, h: h, d: diff });
-            
             alert("Pregunta guardada.");
-            // Reset form
             document.getElementById('new-q').value = "";
             document.getElementById('new-hint').value = "";
             o.forEach((_, i) => document.getElementById('opt-'+i).value = "");
